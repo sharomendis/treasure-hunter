@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Treasure Hunter – Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <main class="auth-card">
+    <img src="assets/img/avataboyingameplay.png" alt="Treasure hunter boy" class="auth-hero">
+    <h1 class="logo">Treasure Hunter</h1>
+    <p class="tagline">Reach the treasure before the sun goes down!</p>
+
+    <div class="tabs">
+      <button id="tabLogin" class="tab active">Log in</button>
+      <button id="tabSignup" class="tab">Sign up</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" class="form">
+      <input id="loginEmail" type="email" placeholder="Email" required autocomplete="email">
+      <input id="loginPassword" type="password" placeholder="Password" required autocomplete="current-password">
+      <label class="check"><input id="remember" type="checkbox" checked> Remember me</label>
+      <button class="btn primary" type="submit">Log in</button>
+    </form>
+
+    <!-- SIGN UP FORM -->
+    <form id="signupForm" class="form hidden">
+      <input id="signupName" type="text" placeholder="Player name" required minlength="3" maxlength="16">
+      <input id="signupEmail" type="email" placeholder="Email" required autocomplete="email">
+      <input id="signupPassword" type="password" placeholder="Password (6+ chars, 1 number)" required autocomplete="new-password">
+      <input id="signupConfirm" type="password" placeholder="Confirm password" required autocomplete="new-password">
+      <button class="btn primary" type="submit">Create account</button>
+    </form>
+
+    <p id="authMsg" class="msg"></p>
+    <p id="modeNote" class="note"></p>
+  </main>
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

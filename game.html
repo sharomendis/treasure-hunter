@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Treasure Hunter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English&family=IM+Fell+English+SC&family=Nunito:wght@700;900&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="game-page">
+
+  <!-- ============ GAME CANVAS + HUD ============ -->
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <div id="hud" class="hidden">
+      <div class="progress">
+        <div id="progressFill" class="progress-fill"></div>
+        <img id="runnerDot" class="runner-dot" src="assets/img/avataboyingameplay.png" alt="">
+        <svg class="tower-icon" viewBox="0 0 24 32" aria-label="Clock tower">
+          <path d="M12 1 L21 9 H3 Z" fill="#6b3f25"/><rect x="5" y="9" width="14" height="22" fill="#a9744d"/>
+          <circle cx="12" cy="15" r="4" fill="#fff4d6"/><path d="M12 15 V12.5 M12 15 H14" stroke="#333" stroke-width="1"/>
+          <rect x="9" y="23" width="6" height="8" rx="3" fill="#5a3418"/>
+        </svg>
+      </div>
+      <div class="hud-row">
+        <div id="coinBox" class="pill"><img src="assets/img/coin.png" alt=""><span id="coinCount">0</span></div>
+        <div id="hearts" class="pill hearts">❤❤❤</div>
+        <div id="timerBox" class="pill timer">
+          <div id="hudSky" class="mini-sky"><div id="hudSun" class="mini-sun"></div><div class="mini-ground"></div></div>
+          <span id="timerText">75s</span>
+        </div>
+        <button id="muteBtn" class="pill icon-btn" aria-label="Mute">🔊</button>
+      </div>
+    </div>
+
+    <button id="hitBtn" class="hit-btn hidden">HIT</button>
+
+    <!-- "Swipe to run" start screen -->
+    <div id="startScreen" class="overlay hidden">
+      <div class="panel">
+        <h2 id="startTitle">Level 1</h2>
+        <p id="startGoal"></p>
+        <div class="swipe-hint"><span class="hand">👆</span></div>
+        <h3 class="blink">Swipe to run</h3>
+        <p class="small" id="controlsText"></p>
+      </div>
+    </div>
+    <div id="countdown" class="countdown hidden">3</div>
+  </div>
+
+  <!-- ============ LEVEL MAP / MENU ============ -->
+  <section id="menu" class="overlay menu">
+    <header class="menu-top">
+      <img src="assets/img/avatar_boy.png" class="avatar" alt="">
+      <div><b id="playerName">Player</b><br><small id="modeText"></small></div>
+      <button id="vaultBtn" class="btn small">💰 Vault</button>
+      <button id="assetBtn" class="btn small">Asset check</button>
+      <button id="logoutBtn" class="btn small ghost">Log out</button>
+    </header>
+    <h1 class="logo">Treasure Hunter</h1>
+    <div class="map">
+      <img src="assets/img/map.png" alt="Treasure map">
+      <button class="lvl" data-level="1" style="left:50%;top:30%">1<small>Lava Pits</small></button>
+      <button class="lvl" data-level="2" style="left:80%;top:62%">2<small>Zombies</small></button>
+      <button class="lvl" data-level="3" style="left:21%;top:62%">3<small>Grand Treasure</small></button>
+    </div>
+    <div class="board">
+      <h3>🏆 Top 3 hunters</h3>
+      <div class="tabs" id="boardTabs">
+        <button class="tab active" data-level="1">Level 1</button>
+        <button class="tab" data-level="2">Level 2</button>
+        <button class="tab" data-level="3">Level 3</button>
+      </div>
+      <ol id="boardList"><li>Loading…</li></ol>
+      <p class="small">Treasure finders first (fewest lives lost, then fastest time), then everyone else by score.</p>
+    </div>
+  </section>
+
+  <!-- ============ FISH API REVIVE ============ -->
+  <section id="fishModal" class="overlay hidden">
+    <div class="panel">
+      <h2>Second chance!</h2>
+      <p>Count <b>only the fish</b> 🐟 (not the treasure chests) to get your life back.</p>
+      <div class="fish-box"><img id="fishImg" alt="Fish puzzle from the Fish API"><div id="fishLoading" class="spinner"></div></div>
+      <p class="small">Puzzle served live by the Fish API · marcconrad.com/uob/fish</p>
+      <form id="fishForm" class="fish-form">
+        <input id="fishAnswer" type="number" inputmode="numeric" min="0" max="99" placeholder="?" required>
+        <button class="btn primary" type="submit">Revive</button>
+      </form>
+      <p id="fishMsg" class="msg"></p>
+      <p class="small">Hearts left: <span id="fishHearts"></span></p>
+    </div>
+  </section>
+
+  <!-- ============ WIN SCREEN (bell rings as the sun goes down) ============ -->
+  <section id="winScreen" class="overlay hidden">
+    <div class="panel win">
+      <div class="sunset-scene">
+        <div class="set-sun"></div>
+        <svg class="big-tower" viewBox="0 0 60 120">
+          <path d="M30 2 L56 30 H4 Z" fill="#6b3f25"/><rect x="10" y="30" width="40" height="90" fill="#a9744d"/>
+          <g class="bell"><path d="M22 42 Q30 30 38 42 L40 52 H20 Z" fill="#f2c04a"/><circle cx="30" cy="54" r="3" fill="#8a6a1a"/></g>
+          <circle cx="30" cy="76" r="11" fill="#fff4d6"/><path d="M30 76 V68 M30 76 H36" stroke="#333" stroke-width="2"/>
+        </svg>
+        <div class="horizon"></div>
+      </div>
+      <h2 id="winTitle">Treasure found!</h2>
+      <img id="winTreasure" src="assets/img/treasure-charm.png" class="treasure-img" alt="">
+      <div id="winStats" class="stats"></div>
+      <div class="btn-row">
+        <button id="nextBtn" class="btn primary">Next level</button>
+        <button class="btn ghost toVault">Vault</button>
+        <button class="btn ghost toMenu">Map</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TREASURE VAULT (your hoard across all runs) ============ -->
+  <section id="vaultScreen" class="vault hidden">
+    <canvas id="vaultCanvas"></canvas>
+    <div class="vault-card">
+      <span class="vault-tag">YOUR HOARD</span>
+      <h1 class="vault-title">Treasure<br>Vault</h1>
+      <h3>Riches</h3>
+      <p><b id="vCoins">0</b> gold coins gathered across <b id="vRuns">0</b> runs.</p>
+      <h3>Adventure</h3>
+      <p><b id="vChests">0</b> chests opened, <b id="vGrand">0</b> grand diamond treasures,
+         <b id="vFish">0</b> Fish API rescues.</p>
+      <div id="vBest" class="vault-best"></div>
+      <div class="vault-btns">
+        <button id="vaultAgain" class="btn primary">Open again</button>
+        <button class="btn vault-ghost toMenu">Map</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOSE SCREEN ============ -->
+  <section id="loseScreen" class="overlay hidden">
+    <div class="panel">
+      <h2 id="loseTitle">The sun has set!</h2>
+      <div id="loseStats" class="stats"></div>
+      <div class="btn-row">
+        <button id="retryBtn" class="btn primary">Try again</button>
+        <button class="btn ghost toMenu">Map</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ASSET CHECK (images + sounds) ============ -->
+  <section id="assetScreen" class="overlay hidden">
+    <div class="panel wide">
+      <h2>Asset check</h2>
+      <p class="small">Every image and sound the game uses. Tap ▶ to hear a sound.</p>
+      <div class="asset-cols"><ul id="imgList"></ul><ul id="sndList"></ul></div>
+      <button class="btn primary" id="closeAssets">Close</button>
+    </div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
