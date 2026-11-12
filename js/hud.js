@@ -3,6 +3,7 @@
 // bars; it listens to bus events and never changes game rules.
 // =============================================================
 import { bus } from "./eventBus.js";
+import { MAX_HEARTS } from "./levels.js";
 
 const $ = id => document.getElementById(id);
 
@@ -21,7 +22,7 @@ export function updateHud(w) {
   $("hudSun").style.top = (8 + t * 70) + "%";           // the sun sinks toward the horizon
   $("hudSky").style.filter = `brightness(${1 - t * 0.55}) saturate(${1 + t * 0.4})`;
   $("timerBox").classList.toggle("urgent", left < 10);
-  $("hearts").textContent = "❤".repeat(w.hearts) + "♡".repeat(Math.max(0, 3 - w.hearts));
+  $("hearts").textContent = "❤".repeat(w.hearts) + "♡".repeat(Math.max(0, MAX_HEARTS - w.hearts));
 }
 
 function pop(el) { el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }

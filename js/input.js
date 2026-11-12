@@ -30,6 +30,7 @@ export function setupInput(target, hitButton) {
 
   // ---- keyboard (desktop)
   window.addEventListener("keydown", e => {
+    if (e.target.closest?.("input, textarea, select")) return;   // typing an answer is not a game move
     const map = { ArrowLeft: "input:left", a: "input:left", ArrowRight: "input:right", d: "input:right",
                   ArrowUp: "input:jump", w: "input:jump", " ": "input:hit", ArrowDown: "input:hit", s: "input:hit" };
     if (map[e.key]) { e.preventDefault(); bus.emit(map[e.key]); }

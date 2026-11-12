@@ -24,6 +24,7 @@ const IMAGES = ["coin.png", "zombie.png", "treasure-charm.png", "avataboyingamep
 
 let user, world, renderer, unlocked = 1, awaitingStart = false, fishSolution = null, fishChests = 0;
 let pendingSave = Promise.resolve();
+let countdownTimer = null;
 
 /** Save a run to Firestore / demo storage; if it fails, say so on the result screen instead of hiding it. */
 function save(run, statsId) {
@@ -63,7 +64,7 @@ function loop(now) {
 
 // ---------------- menu & leaderboard ----------------
 async function openMenu() {
-  stopMusic(); closeVault();
+  stopMusic(); closeVault(); cancelCountdown();
   ["hud", "hitBtn", "startScreen", "winScreen", "loseScreen", "fishModal", "vaultScreen"].forEach(id => show(id, false));
   show("menu");
   unlocked = await getUnlockedLevel(user).catch(() => 1);
@@ -101,6 +102,7 @@ function alertLocked(b) { b.classList.add("shake"); setTimeout(() => b.classList
 
 // ---------------- level start: "Swipe to run" ----------------
 function startLevel(n) {
+  cancelCountdown();
   world.destroy();
   world = new World(n);
   const c = LEVELS[n];
@@ -113,15 +115,24 @@ function startLevel(n) {
   updateHud(world);
   awaitingStart = true;
 }
+function cancelCountdown() {
+  awaitingStart = false;
+  clearInterval(countdownTimer); countdownTimer = null; show("countdown", false);
+}
 function begin() {
-  if (!awaitingStart) return;
+  // only the visible "Swipe to run" screen of a fresh level may start the countdown —
+  // never a key pressed after death, on the lose/win screen, in the menu or in the fish popup
+  if (!awaitingStart || world.state !== "ready" || $("startScreen").classList.contains("hidden")) return;
   awaitingStart = false; show("startScreen", false);
+  const w = world;                                              // the run this countdown belongs to
   let n = 3; show("countdown"); $("countdown").textContent = n; play("beep");
-  const t = setInterval(() => {                                // timeout events drive the countdown
+  countdownTimer = setInterval(() => {                          // timeout events drive the countdown
+    if (world !== w || w.state !== "ready") return cancelCountdown();
     n--;
     if (n > 0) { $("countdown").textContent = n; play("beep"); }
-    else { clearInterval(t); $("countdown").textContent = "GO!"; play("go"); play("music");
-           world.state = "run"; setTimeout(() => show("countdown", false), 500); }
+    else { clearInterval(countdownTimer); countdownTimer = null;
+           $("countdown").textContent = "GO!"; play("go"); play("music");
+           w.state = "run"; setTimeout(() => show("countdown", false), 500); }
   }, 700);
 }
 ["input:left", "input:right", "input:jump", "input:hit"].forEach(e => bus.on(e, begin));
@@ -129,7 +140,7 @@ $("startScreen").addEventListener("click", begin);
 
 // ---------------- death -> Fish API revive ----------------
 bus.on("died", () => stopMusic());
-bus.on("needRevive", () => { show("fishModal"); $("fishMsg").textContent = ""; loadPuzzle(); });
+bus.on("needRevive", () => { show("fishModal"); $("fishMsg").textContent = ""; $("fishMsg").className = "msg"; loadPuzzle(); });
 
 async function loadPuzzle() {
   $("fishHearts").textContent = "❤".repeat(world.hearts);
@@ -141,8 +152,17 @@ async function loadPuzzle() {
     $("fishImg").src = imageSrc;
   } catch (e) {
     show("fishLoading", false);
-    $("fishMsg").innerHTML = `Could not reach the Fish API (${esc(e.message)}). <button class="btn small" id="retryFish">Retry</button>`;
-    $("retryFish").onclick = loadPuzzle;
+    $("fishMsg").className = "msg err";
+    $("fishMsg").innerHTML = `Could not reach the Fish API (${esc(e.message)}).<br>
+      <button type="button" class="btn small" id="retryFish">Retry</button>
+      <button type="button" class="btn small ghost" id="giveUpFish">Give up</button>
+      <button type="button" class="btn small ghost" id="mapFish">Map</button>`;
+    $("retryFish").onclick = () => { play("click"); $("fishMsg").textContent = ""; loadPuzzle(); };
+    $("giveUpFish").onclick = () => {                              // ends the run normally: lose screen + score saved
+      play("click"); fishSolution = null;
+      if (world.state === "puzzle") world.lose("You gave up — the Fish API was unreachable.");
+    };
+    $("mapFish").onclick = () => { play("click"); fishSolution = null; openMenu(); };
   }
 }
 
