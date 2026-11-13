@@ -6,7 +6,8 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
     // Anyone logged in can read scores (leaderboard);
-    // you can only add a score with YOUR uid, and nobody can edit/delete scores
+    // you can only add a score with YOUR uid, and nobody can edit/delete scores.
+    // (The Express server uses the Admin SDK, which skips these rules.)
     match /scores/{id} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;

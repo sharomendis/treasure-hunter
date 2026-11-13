@@ -89,6 +89,32 @@ Data saved:
 * `users/{uid}` → `username, email, unlockedLevel, createdAt`
 * `scores/{id}` → `uid, username, level, won, score, coins, deaths, timeSec, fishWins, fishTries, lavaJumped, zombiesDodged, zombiesKilled, obstacles, playedAt`
 
+### 4b. Score server (Node.js + Express)
+
+Saving runs and the leaderboard go through a small server in `server/`, so players can't write fake scores straight into Firestore.
+
+| Route | What it does |
+|---|---|
+| `GET /api/health` | `{ ok: true }` |
+| `GET /api/leaderboard/:level` | Top 3 hunters for level 1–3 (each player's best run) |
+| `POST /api/scores` | Saves a run. Needs `Authorization: Bearer <Firebase ID token>`. The server checks the token, range-checks every number, **recalculates the score**, refuses locked levels, and unlocks the next level on a win. |
+
+Set it up once (free Spark plan, no Firebase CLI needed):
+```bash
+cd server
+npm install
+npm run setup     # creates .env, opens the Firebase key page, waits for the download,
+                  # moves the key to server/serviceAccountKey.json (git-ignored),
+                  # tests Firestore and publishes firestore.rules
+npm start         # or: npm run dev  (restarts when you edit)
+```
+On the page that opens, click **Generate new private key → Generate key**; the script does the rest.
+Then open **http://localhost:3000**. The server also serves the game, so everything runs on one address.
+
+`js/firebase-config.js` → `API_URL` decides where the game sends scores. By default it uses the server
+when the game is opened from port 3000, and Firestore directly anywhere else (so the web.app link still works).
+Set it to `"https://my-server.com"` to always use a deployed server (add the game's address to `CORS_ORIGINS` in `.env`).
+
 ## 5. Put it online (get a link to play on your phone)
 
 In the VS Code terminal (**Terminal → New Terminal**), inside the project folder:

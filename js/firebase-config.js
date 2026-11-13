@@ -17,3 +17,11 @@ export const firebaseConfig = {
 };
 
 export const FIREBASE_ENABLED = !firebaseConfig.apiKey.startsWith("PASTE");
+
+// Node/Express score server (see server/). Saving runs and the leaderboard go through it.
+//   ""                         -> same origin (game opened from the server, e.g. http://localhost:3000)
+//   "https://your-server.com"  -> a server deployed somewhere else
+//   null                       -> no server: talk to Firestore directly
+// Default: use the server when the game is opened from it (port 3000); anywhere else
+// (e.g. the web.app link on your phone) the game keeps working straight from Firestore.
+export const API_URL = location.port === "3000" ? "" : null;

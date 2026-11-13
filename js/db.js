@@ -2,10 +2,30 @@
 // db.js  —  Saving runs, unlocking levels, top-3 leaderboard.
 // Firestore collections:  users/{uid}   and   scores/{autoId}
 // =============================================================
-import { FIREBASE_ENABLED } from "./firebase-config.js";
+import { FIREBASE_ENABLED, API_URL } from "./firebase-config.js";
 import { loadFirebase } from "./auth.js";
 
 const localScores = () => JSON.parse(localStorage.getItem("th_scores") || "[]");
+const USE_SERVER = FIREBASE_ENABLED && API_URL !== null;
+
+/** Calls the Express server; sends the Firebase ID token so the server knows who the player is. */
+async function api(path, options = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (options.auth) {
+    const f = await loadFirebase();
+    if (!f.auth.currentUser) throw new Error("Please log in again.");
+    headers.Authorization = "Bearer " + await f.auth.currentUser.getIdToken();
+  }
+  let res;
+  try {
+    res = await fetch(API_URL + path, { method: options.method || "GET", headers, body: options.body });
+  } catch {
+    throw new Error("Score server is offline.");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+  return data;
+}
 
 /** Ranking rule: treasure finders first (fewest lives lost, then fastest, then most coins);
  *  hunters who didn't make it yet are ranked by score. */
@@ -16,6 +36,10 @@ export function rankRuns(a, b) {
 }
 
 export async function saveRun(user, run) {
+  if (USE_SERVER) {                                   // server checks the run, saves it and unlocks the next level
+    await api("/api/scores", { method: "POST", auth: true, body: JSON.stringify(run) });
+    return;
+  }
   const row = { uid: user.uid, username: user.username, ...run, playedAt: Date.now() };
   if (FIREBASE_ENABLED) {
     const f = await loadFirebase();
@@ -29,6 +53,7 @@ export async function saveRun(user, run) {
 
 /** Top 3 hunters for a level — each player's best run only, so one person can't fill the board. */
 export async function getTop3(level) {
+  if (USE_SERVER) return api("/api/leaderboard/" + level);
   let rows;
   if (FIREBASE_ENABLED) {
     const f = await loadFirebase();
