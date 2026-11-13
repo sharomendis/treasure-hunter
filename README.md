@@ -77,11 +77,13 @@ treasure-hunter/
 
 1. Go to https://console.firebase.google.com → **Add project** → name it `treasure-hunter` → Create.
 2. **Authentication** → Get started → **Sign-in method** → enable **Email/Password**.
+   Then **Add new provider** → **Google** → Enable → choose a *project support email* → Save.
+   (Google sign-in needs the page opened over `http://localhost` or the hosted `web.app` link, not by double-clicking the file.)
 3. **Firestore Database** → Create database → choose a location → *Start in production mode*.
 4. Firestore → **Rules** tab → paste the contents of `firestore.rules` → **Publish**.
 5. Project settings (⚙) → General → *Your apps* → click **</>** (Web) → register app (no hosting tick needed).
    Copy the `firebaseConfig` values into `js/firebase-config.js`, replacing every `PASTE_...`.
-6. Reload the page — the login page now says **"Online accounts (Firebase)"**.
+6. Reload the page — accounts are now saved online in Firebase.
 
 Data saved:
 * `users/{uid}` → `username, email, unlockedLevel, createdAt`

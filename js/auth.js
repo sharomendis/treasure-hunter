@@ -1,7 +1,7 @@
 // =============================================================
 // auth.js  —  VIRTUAL IDENTITY (Week 5)
 // One job: who is the player?  Sign up, log in, log out, session.
-// Real mode  : Firebase Authentication (email + password, token kept by Firebase).
+// Real mode  : Firebase Authentication (email + password or Google, token kept by Firebase).
 // Demo mode  : passwords are SHA-256 hashed with a salt and stored in localStorage.
 // =============================================================
 import { firebaseConfig, FIREBASE_ENABLED } from "./firebase-config.js";
@@ -72,6 +72,28 @@ export async function login(email, password, remember) {
   const session = JSON.stringify({ uid: u.uid, username: u.username, email });
   (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, session);
   return JSON.parse(session);
+}
+
+/** Sign in (or sign up) with a Google account. Firebase only — needs the Google
+ *  provider enabled in Firebase console > Authentication > Sign-in method. */
+export async function signInWithGoogle(remember) {
+  if (!FIREBASE_ENABLED) throw new Error("Google sign-in needs Firebase (not available in demo mode).");
+  const f = await loadFirebase();
+  await f.setPersistence(f.auth, remember ? f.browserLocalPersistence : f.browserSessionPersistence);
+  const provider = new f.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" }); // always show the account chooser
+  const cred = await f.signInWithPopup(f.auth, provider);
+  const user = cred.user;
+  const username = (user.displayName || user.email.split("@")[0]).slice(0, 16);
+
+  // First Google login = new player: create their profile doc.
+  // Returning player: leave it alone so unlockedLevel is not reset.
+  const ref = f.doc(f.db, "users", user.uid);
+  const snap = await f.getDoc(ref);
+  if (!snap.exists()) {
+    await f.setDoc(ref, { username, email: user.email, unlockedLevel: 1, provider: "google", createdAt: f.serverTimestamp() });
+  }
+  return { uid: user.uid, username, email: user.email };
 }
 
 export async function logout() {
